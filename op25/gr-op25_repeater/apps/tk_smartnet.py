@@ -397,11 +397,11 @@ class osw_receiver(object):
         grp_str = "G" if (grp != 0) else "I"
         if self.is_chan(cmd):
             freq = self.get_freq(cmd)
-            if self.debug >= 9:
+            if self.debug >= 11:
                 sys.stderr.write("%s [%d] SMARTNET OSW (0x%04x,%s,0x%03x,%f)\n" % (log_ts.get(), self.msgq_id, addr, grp_str, cmd, freq))
         else:
             freq = 0.0
-            if self.debug >= 9:
+            if self.debug >= 11:
                 sys.stderr.write("%s [%d] SMARTNET OSW (0x%04x,%s,0x%03x)\n" % (log_ts.get(), self.msgq_id, addr, grp_str, cmd))
         self.osw_q.append((addr, (grp != 0), cmd, self.is_chan(cmd), freq))
 
@@ -519,7 +519,7 @@ class osw_receiver(object):
         tgid_stat = tgid & 0x000f
 
         if self.debug >= 5:
-            sys.stderr.write('%s [%d] set tgid=%s, status=0x%x, srcaddr=%s\n' % (log_ts.get(), self.msgq_id, base_tgid, tgid_stat, srcaddr))
+            sys.stderr.write('%s [%d] set tgid=%s, status=0x%x, srcaddr=%s [%s]\n' % (log_ts.get(), self.msgq_id, base_tgid, tgid_stat, srcaddr, self.talkgroups[base_tgid]['tag']))
         
         if base_tgid not in self.talkgroups:
             self.add_default_tgid(base_tgid)
@@ -574,9 +574,11 @@ class osw_receiver(object):
         d['last_tsbk'] = self.last_osw
         t = time.time()
         for f in list(self.voice_frequencies.keys()):
-            d['frequencies'][f] = 'voice frequency %f tgid %5d %4.1fs ago count %d' %  ((f/1e6), self.voice_frequencies[f]['tgid'], t - self.voice_frequencies[f]['time'], self.voice_frequencies[f]['counter'])
+            tgid = self.voice_frequencies[f]['tgid']
+            d['frequencies'][f] = 'voice frequency %f tgid %5d %4.1fs ago count %d [%s]' \
+                % ((f/1e6), self.voice_frequencies[f]['tgid'], t - self.voice_frequencies[f]['time'], self.voice_frequencies[f]['counter'], self.talkgroups[tgid]['tag'])
 
-            d['frequency_data'][f] = {'tgids': [self.voice_frequencies[f]['tgid']], 'last_activity': '%7.1f' % (t - self.voice_frequencies[f]['time']), 'counter': self.voice_frequencies[f]['counter']}
+            d['frequency_data'][f] = {'tgids': [tgid], 'last_activity': '%7.1f' % (t - self.voice_frequencies[f]['time']), 'counter': self.voice_frequencies[f]['counter']}
         d['adjacent_data'] = ""
         return json.dumps(d)
 
